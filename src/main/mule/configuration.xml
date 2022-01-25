@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:oracle-ebs122="http://www.mulesoft.org/schema/mule/oracle-ebs122"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/oracle-ebs122 http://www.mulesoft.org/schema/mule/oracle-ebs122/current/mule-oracle-ebs122.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="1f3510b1-5494-4b1f-ad47-c8e41fbf15fe" file="configuration/config.yaml" />
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="f09f318f-9cec-4fcd-b922-15679af9eb9e" >
+		<salesforce:basic-connection username="${sfdc.userid}" password="${sfdc.password}" securityToken="${sfdc.token}" />
+	</salesforce:sfdc-config>
+	<oracle-ebs122:jms-config name="Oracle_EBS_12_2_JMS" doc:name="Oracle EBS 12.2 JMS" doc:id="cca9238f-1698-4c2f-952c-213e680257c8" >
+		<oracle-ebs122:jms-connection username="${ebsJms.username}" password="${ebsJms.password}" host="${ebsJms.host}" sid="${ebsJms.database}" port="${ebsJms.port}"/>
+	</oracle-ebs122:jms-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="bc740038-aa1d-4934-8589-cb8ea6364244" >
+		<db:oracle-connection host="${dbEbs.host}" user="${dbEbs.user}" password="${dbEbs.password}" port="${dbEbs.port}" serviceName="${dbEbs.serviceName}"/>
+	</db:config>
+	<db:config name="Database_Config_Xwlk" doc:name="Database Config" doc:id="f23cb528-ec90-4131-9151-d9a94bb69439" >
+		<db:my-sql-connection host="${dbXwlk.host}" port="${dbXwlk.port}" user="${dbXwlk.user}" password="${dbXwlk.password}" database="${dbXwlk.database}" />
+	</db:config>
+	<oracle-ebs122:config name="Oracle_EBS_12_2_Config" doc:name="Oracle EBS 12.2 Config" doc:id="cca882d2-7867-4852-b72b-b9cd43270c82" >
+		<oracle-ebs122:plsql-connection host="${ebs.host}" port="${ebs.port}" username="${ebs.username}" password="${ebs.password}" restServiceLocatorAlias="${ebs.restServiceLocatorAlias}" fndWebSecAlias="${ebs.fndWebSecAlias}" responsibility="${ebs.responsibility}" respApplication="${ebs.respApplication}" securityGroup="${ebs.securityGroup}" orgId="${ebs.orgId}" />
+	</oracle-ebs122:config>
+
+</mule>

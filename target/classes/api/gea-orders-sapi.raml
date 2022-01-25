@@ -1,0 +1,48 @@
+#%RAML 1.0
+version: 1.0.0
+title: GEA Orders sAPI
+mediaType: 
+- application/json
+
+types:
+  Orders: !include /dataTypes/orders.raml
+  orderItems: !include /dataTypes/orderItems.raml
+  errorCode: !include /dataTypes/errorCode.raml
+
+/orders:
+  post:
+    description: "Enter orders into system"
+    body:
+      type: Orders
+      example: !include examples/orderIn.raml
+    responses:
+      201:
+        body:
+          example: !include examples/orderResponse.raml
+      501:
+        body:
+          type: errorCode
+  /{order_ID}:
+    get:
+      description: "Retrieve orders from the system by order number"
+      responses:
+        200:
+          body:
+            type: Orders
+            example: !include examples/order.raml
+        501:
+          body:
+            type: errorCode
+    put:
+      description: "Update order information"
+      body:
+        type: Orders
+        example: !include examples/orderIn.raml
+      responses:
+        200:
+          body:
+            type: Orders
+            example: !include examples/order.raml
+        501:
+          body: 
+            type: errorCode

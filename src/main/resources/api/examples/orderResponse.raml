@@ -1,0 +1,39 @@
+#%RAML 1.0 NamedExample
+{
+  "ReturnStatus" : "S",
+  "EBS_Header_ID" : "98765",
+  "Order_Number" : "123456",
+  "Messages" : 
+    [{
+      "messageText" : "sample message 1"
+      },
+      {
+      "messageText":"sample message 2"
+      }],
+  "PO_Number" : "12345",
+  "Invoice_To": {
+                  "Org" : "Highland Heights",
+                  "Address" : "747 Alpha Drive",
+                  "City" : "Clevland",
+                  "State" : "OH",
+                  "Zip" : "44143",
+                  "Country" : "US"
+                },
+  "Ship_To" : {
+                  "Customer" : "Worldwide Communications",
+                  "Address" : "747 Alpha Drive",
+                  "City" : "Clevland",
+                  "State" : "OH",
+                  "Zip" : "44143",
+                  "Country" : "US"
+                },
+  "Items" : [{
+                  "Description" : "Monitor - 19",
+                  "OrderedQuantity" : 10,
+                  "UnitListPrice" : 500.00
+                },{
+                  "Description" : "Monitor - 24",
+                  "OrderedQuantity" : 5,
+                  "UnitListPrice" : 900.00
+                }]              
+}

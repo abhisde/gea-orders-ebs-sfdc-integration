@@ -1,0 +1,44 @@
+sfdc:
+  userid: "iyerosky@gea.com"
+  password: "Mulesoftdemo@2021"
+  token: "yxKwKoqIZvb1Cu6sAriCz01i"
+  
+ebs:
+  host: "ebs.demos.mulesoft.com" 
+  port: "80" 
+  username: "OPERATIONS" 
+  password: "MuleDemo21!" 
+  restServiceLocatorAlias: "ebsRestService" 
+  fndWebSecAlias: "fnd_web_sec" 
+  responsibility: "ORDER_MGMT_SUPER_USER" 
+  respApplication: "ONT" 
+  securityGroup: "STANDARD" 
+  orgId: "204"  
+  
+ebsJms:
+  username: "APPS"
+  password: "GsetApps2021"
+  host: "ebs.demos.mulesoft.com"
+  port: "1521"
+  database: "EBSDB"
+
+gea:
+  host: "gea-ebs-orders-data-sapi.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api"
+  timeout: "30000"
+  
+dbEbs:
+  host: "ebs.demos.mulesoft.com"
+  port: "1521"
+  user: "APPS"
+  password: "GsetApps2021"
+  serviceName: "EBSDB"
+  
+dbXwlk:
+  host: "eksprod.tools.mulesoft.com"
+  port: "31728"
+  user: "mulesoft_mysql"
+  password: "kOIXv44Eo4la@123"
+  database: "MySQLDB"

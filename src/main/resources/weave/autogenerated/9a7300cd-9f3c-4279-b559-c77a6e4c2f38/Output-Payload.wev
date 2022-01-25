@@ -1,0 +1,5 @@
+%dw 2.0
+
+type auto_9a7300cd_9f3c_4279_b559_c77a6e4c2f38_Output_Payload = Array<{|  AccountId: String,   OpportunityId: String,   PoNumber: String | Null,   SBQQ__PaymentTerm__c: String,   EffectiveDate: Date,   Status: String,   Description: String,   OrderItems: Array<{|    orderId: String,     PricebookEntryId: String,     Product2Id: String,     Quantity: Number,     UnitPrice: Number  |}> | Null
+|}>
+

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:oracle-ebs122="http://www.mulesoft.org/schema/mule/oracle-ebs122"
+	xmlns:dynamics365ForOperations="http://www.mulesoft.org/schema/mule/dynamics365ForOperations"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:dynamics="http://www.mulesoft.org/schema/mule/dynamics" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/dynamics http://www.mulesoft.org/schema/mule/dynamics/current/mule-dynamics.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/dynamics365ForOperations http://www.mulesoft.org/schema/mule/dynamics365ForOperations/current/mule-dynamics365ForOperations.xsd
+http://www.mulesoft.org/schema/mule/oracle-ebs122 http://www.mulesoft.org/schema/mule/oracle-ebs122/current/mule-oracle-ebs122.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e1d7eda5-a2bc-4676-85d8-d225c0bff666" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<sub-flow name="prepare-order-data" doc:id="9a7300cd-9f3c-4279-b559-c77a6e4c2f38" >
+		<ee:transform doc:name="Transform Message" doc:id="352842c3-5b10-432b-b797-0ed448c31e70">
+			<ee:message>
+				<ee:set-payload><![CDATA[output application/xml
+ns ns0 http://xmlns.oracle.com/apps/ont/rest/salesOrdersServices/get_order/
+ns ns01 http://xmlns.oracle.com/apps/fnd/rest/header
+---
+{
+	ns0#InputParameters: {
+		ns0#P_API_VERSION_NUMBER: 1,
+		ns0#P_ORG_ID: 204,
+		ns0#P_HEADER_ID: vars.ebsInput.headerId
+						}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<oracle-ebs122:invoke-pl-sql-rest-service plSql="salesOrdersServices" operation="GET_ORDER" doc:name="Invoke PL/SQL REST Service" doc:id="c8bc19b6-3c6a-4332-81af-9cdde5b33738" config-ref="Oracle_EBS_12_2_Config">
+					<oracle-ebs122:input><![CDATA[#[output application/xml
+ns ns0 http://xmlns.oracle.com/apps/ont/rest/salesOrdersServices/get_order/
+---
+{
+	ns0#InputParameters: {
+		ns0#P_API_VERSION_NUMBER: payload.ns0#InputParameters.ns0#P_API_VERSION_NUMBER,
+		ns0#P_HEADER_ID: payload.ns0#InputParameters.ns0#P_HEADER_ID,
+		ns0#P_ORG_ID: payload.ns0#InputParameters.ns0#P_ORG_ID,
+	// ns0#P_ORDER_NUMBER: payload.ns0#InputParameters.ns0#P_ORDER_NUMBER
+	}
+}]]]></oracle-ebs122:input>
+				</oracle-ebs122:invoke-pl-sql-rest-service>
+		<ee:transform doc:name="Transform Message" doc:id="d5483c02-b42b-4429-8502-23c0c6f51da5">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://xmlns.oracle.com/apps/ont/rest/salesOrdersServices/get_order/
+---
+{
+	EBS_Integration_Method: "MuleSoft EBS Connector",
+	booked: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#BOOKED_FLAG,
+	transactionalCurrCode: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#TRANSACTIONAL_CURR_CODE,
+	orderTypeId: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#ORDER_TYPE_ID,
+	priceListId: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#PRICE_LIST_ID,
+	soldToOrgId: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#SOLD_TO_ORG_ID,
+	customerPO: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#CUST_PO_NUMBER,
+	orderNumber: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#ORDER_NUMBER,
+	paymentTermId: payload.ns0#OutputParameters.ns0#X_HEADER_REC.PAYMENT_TERM_ID,
+	orderStatus: payload.ns0#OutputParameters.ns0#X_HEADER_REC.ns0#FLOW_STATUS_CODE,
+	orderItems: payload.ns0#OutputParameters.ns0#X_LINE_TBL.*ns0#X_LINE_TBL_ITEM map ( xLINETBLITEM , indexOfXLINETBLITEM ) -> {
+		inventoryItemId: xLINETBLITEM.ns0#INVENTORY_ITEM_ID default 0,
+		lineTypeId: xLINETBLITEM.ns0#LINE_TYPE_ID default 0,
+		paymentTermId: xLINETBLITEM.ns0#PAYMENT_TERM_ID default 0,
+		unitSellingPrice: xLINETBLITEM.ns0#UNIT_SELLING_PRICE default 0,
+		orderedQuantity: xLINETBLITEM.ns0#ORDERED_QUANTITY default 0,
+		unitListPrice: xLINETBLITEM.ns0#UNIT_LIST_PRICE default 0,
+		priceListId: xLINETBLITEM.ns0#PRICE_LIST_ID default 0,
+		taxValue: xLINETBLITEM.ns0#TAX_VALUE default 0,
+		shipFromOrgID: xLINETBLITEM.ns0#SHIP_FROM_ORG_ID default 0
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="1656f2f5-e890-4bf2-954d-f512420c0a0b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+    {
+    "AccountId": "0015e00000E76HZAAZ",
+    "OpportunityId": "0065e00000DBvXWAA1",
+    "EffectiveDate": now() as Date,
+	"Status": "Draft",
+	"orderNo": payload.orderNumber as String,
+	"orderStatusEBS": payload.orderStatus as String default "Entered",
+	"Description": "Order Reference in EBS : " ++ payload.orderNumber as String,
+	"PoNumber": payload.customerPO as String,
+    "orderItems":  payload.orderItems map (value, index) -> {
+           "PricebookEntryId": ((vars.xwalkData filter $.inventory_item_id == value.inventoryItemId as Number) filter $.term_id == value.paymentTermId as Number).Pricebook_Entry_Id reduce $$ default "01u5e000003g4StAAI",
+            "Product2Id": ((vars.xwalkData filter $.inventory_item_id == value.inventoryItemId as Number) filter $.term_id == value.paymentTermId as Number).Product2Id reduce $$ default "01t5e000002F646AAC",
+            "SBQQ__PaymentTerm__c": ((vars.xwalkData filter $.inventory_item_id == value.inventoryItemId as Number) filter $.term_id == value.paymentTermId as Number).payment_term_id reduce $$ default "Net 30",
+            "Quantity": value.orderedQuantity as Number,
+            "UnitPrice": value.unitListPrice as Number,
+            "orderId": payload.orderNumber as String,
+            "taxValue": value.taxValue default 0
+        }
+    }
+] 
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="fd1bf510-58fe-44e7-b081-629c9aa6fa91" variableName="orderDetails" />
+	</sub-flow>
+	<flow name="gea-ebs-sfdc-sync" doc:id="d9011fa6-edda-492d-a8c0-6400e0b7bd53" initialState="started" maxConcurrency="1">
+		<oracle-ebs122:business-events-source doc:name="Business events source - Checked Status to Booked" doc:id="2edfffe8-6683-4272-a625-065b26cb494d" config-ref="Oracle_EBS_12_2_JMS" subscriptionName="oracle.apps.ont.oip.statuschange.update" />
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	headerId: payload.parameterList.'HEADER_ID' as Number default 0,&#10;	lineId: payload.parameterList.'LINE_ID' as Number default 0&#10;	//headerId: 418777,&#10;	//lineId: 0&#10;}]" doc:name="Set Variable" doc:id="b2985a1c-2ba0-4a4a-b170-a4bb4d5c044c" variableName="ebsInput" />
+		<choice doc:name="Choice" doc:id="b5dc4ccb-7d8e-4018-999d-0ff24407e517" >
+			<when expression="#[vars.ebsInput.lineId == 0]">
+				<db:select doc:name="Select" doc:id="e1d011c4-4bc8-4bba-8651-3568e410a2f8" config-ref="Database_Config_Xwlk">
+					<db:sql><![CDATA[select * from ebs_sfdc_xwalk]]></db:sql>
+				</db:select>
+				<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="Set Variable" doc:id="73fd0f3b-1a41-4c8e-bb7f-ad93991381e6" variableName="xwalkData" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="9d2cdad3-0818-4443-9b53-cadeb477a965" message='#["Do not check Order Data"]'/>
+			</otherwise>
+		</choice>
+		<flow-ref doc:name="Flow Reference" doc:id="7583f170-5b56-4a29-9ddf-eb97fa5ccd0a" name="prepare-order-data" />
+		<salesforce:query doc:name="Query" doc:id="fd56e588-d073-4bc1-b7d5-e283d38c0b2a" config-ref="Salesforce_Config" target="exists">
+			<salesforce:salesforce-query><![CDATA[SELECT Id FROM Order WHERE ERP_Reference_ID__c like ':ebsOrderNo'	]]></salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"ebsOrderNo" : vars.orderDetails[0].orderNo
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<salesforce:query doc:name="Query" doc:id="0b3a66c9-9d3b-4bb2-b58a-4c56b4f21639" config-ref="Salesforce_Config" target="itemExists">
+			<salesforce:salesforce-query><![CDATA[SELECT OrderItemNumber FROM OrderItem WHERE OrderId = ':orderId']]></salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"orderId" : vars.exists.Id[0] default "9999xxxxxxxxxxxxxx" as String
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<choice doc:name="Choice" doc:id="9ecc98bb-d5da-47f5-85d4-91a6a2bd7fe9" >
+			<when expression="#[vars.exists.Id[0] == null]">
+				<salesforce:create type="Order" doc:name="Create Order in SFDC" doc:id="b1196940-f264-4fbb-a5e7-9f03866c46bf" config-ref="Salesforce_Config">
+			<salesforce:records><![CDATA[#[output application/java
+---
+vars.orderDetails map ( payload01 , indexOfPayload01 ) -> {
+	AccountId: payload01.AccountId,
+	Pricebook2Id: "01s5e000009kFI5AAM" as String,
+	//Pricebook2Id: payload01.orderItems.PricebookEntryId[0] as String,
+	//PoNumber: payload01.PoNumber as String,
+	OpportunityId: payload01.OpportunityId,
+	EffectiveDate: payload01.EffectiveDate,
+	Status: payload01.Status,
+	Description: payload01.Description ++ " - " ++ payload01.orderStatusEBS,
+	SBQQ__PaymentTerm__c: payload01.SBQQ__PaymentTerm__c,
+	ERP_Reference_ID__c: payload01.orderNo as String,
+	//SBQQ__TaxAmount__c: payload01.orderItems.taxValue as Number default 0
+}]]]></salesforce:records>
+		</salesforce:create>
+				<ee:transform doc:name="Transform Message" doc:id="429a993a-bed8-4d1e-971b-f5302eb1e6b1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<salesforce:create type="OrderItem" doc:name="Create Order lines" doc:id="9486056e-8351-48f8-9808-86032ba91a2b" config-ref="Salesforce_Config">
+			<salesforce:records><![CDATA[#[%dw 2.0
+output application/java
+---
+vars.orderDetails.orderItems[0] map ( orderItem , indexOfOrderItem ) -> {
+	Product2Id: orderItem.Product2Id as String,
+	OrderId: payload.items.id[0] as String,
+	PricebookEntryId: orderItem.PricebookEntryId as String,
+	Quantity: orderItem.Quantity as Number,
+	UnitPrice: orderItem.UnitPrice as Number,
+}]]]></salesforce:records>
+		</salesforce:create>
+				<logger level="INFO" doc:name="Logger" doc:id="ba4b8a2b-8ddd-44bd-b7a9-3c608d316368" message='#["Order is created"]'/>
+			</when>
+			<when expression="#[(vars.exists.Id[0] != null) and (vars.ebsInput.lineId == 0)]">
+				<salesforce:update type="Order" doc:name="Update Order Data" doc:id="a9e1bfe1-7806-43eb-94b2-5f07551e8c29" config-ref="Salesforce_Config">
+					<salesforce:records><![CDATA[#[output application/java
+---
+vars.orderDetails map ( payload01 , indexOfPayload01 ) -> {
+	Id: vars.exists.Id[0],
+	AccountId: payload01.AccountId,
+	//Pricebook2Id: "01s5e000009kFI5AAM" as String,
+	//Pricebook2Id: payload01.orderItems.PricebookEntryId[0] as String,
+	OpportunityId: payload01.OpportunityId,
+	EffectiveDate: payload01.EffectiveDate,
+	Status: payload01.Status,
+	Description: payload01.Description ++ " - " ++ payload01.orderStatusEBS as String,
+	SBQQ__PaymentTerm__c: payload01.SBQQ__PaymentTerm__c,
+	ERP_Reference_ID__c: vars.orderDetails[0].orderNo as String
+}]]]></salesforce:records>
+				</salesforce:update>
+				<ee:transform doc:name="Transform Message" doc:id="96fc832a-0648-4642-98ee-b8c17ba6fbc0">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message" doc:id="30043a8b-9955-4e1c-b5b7-e82279eaa784">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json skipNullOn= "everywhere"
+---
+vars.orderDetails[0].orderItems map ( orderItem , indexOfOrderItem ) -> {
+	Product2Id: orderItem.Product2Id as String,
+	OrderId: vars.exists.Id[0] as String,
+	//OrderItemNumber: vars.itemExists[0].OrderItemNumber default "NULL",
+	PricebookEntryId: orderItem.PricebookEntryId as String,
+	Quantity: orderItem.Quantity as Number,
+	UnitPrice: orderItem.UnitPrice as Number
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<foreach doc:name="For Each" doc:id="f0221ffd-f944-49b4-a211-c865ae52bd14" collection="#[payload]">
+					<salesforce:query doc:name="Query" doc:id="68618e58-1f98-40c0-8031-9281ee28f429" config-ref="Salesforce_Config" target="itemLines">
+						<salesforce:salesforce-query ><![CDATA[SELECT OrderItemNumber FROM OrderItem WHERE OrderId = ':orderId' AND PricebookEntryId = ':PricebookEntryId' AND Product2Id = ':Product2Id' ]]></salesforce:salesforce-query>
+						<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"orderId" : vars.exists.Id[0] default "9999xxxxxxxxxxxxxx" as String,
+	"PricebookEntryId": payload.PricebookEntryId as String,
+	"Product2Id": payload.Product2Id as String
+}]]]></salesforce:parameters>
+					</salesforce:query>
+					<choice doc:name="Choice" doc:id="86c6ea74-b3a3-49d1-8d42-f6fb8b76e59d" >
+						<when expression="#[vars.itemLines[0] == null]">
+							<salesforce:create type="OrderItem" doc:name="Create Order lines" doc:id="7cfc953f-73f9-44ac-bd8a-a84d8f2869f6" config-ref="Salesforce_Config" >
+								<salesforce:records ><![CDATA[#[%dw 2.0
+output application/java
+---
+[{
+	Product2Id: payload.Product2Id as String,
+	OrderId: vars.exists.Id[0] as String,
+	PricebookEntryId: payload.PricebookEntryId as String,
+	Quantity: payload.Quantity as Number,
+	UnitPrice: payload.UnitPrice as Number
+}]]]]></salesforce:records>
+							</salesforce:create>
+						</when>
+						<otherwise >
+							<salesforce:upsert objectType="OrderItem" externalIdFieldName="OrderItemNumber" doc:name="Update Order Lines" doc:id="9ff49d99-8815-424f-aa60-29ad4d87abef" config-ref="Salesforce_Config">
+					<salesforce:records><![CDATA[#[%dw 2.0
+output application/java 
+---
+[{
+	Product2Id: payload.Product2Id as String,
+	OrderId: vars.exists.Id[0] as String,
+	OrderItemNumber: vars.itemLines[0].OrderItemNumber as String,
+	PricebookEntryId: payload.PricebookEntryId as String,
+	Quantity: payload.Quantity as Number,
+	UnitPrice: payload.UnitPrice as Number
+}]]]]></salesforce:records>
+				</salesforce:upsert>
+						</otherwise>
+					</choice>
+				</foreach>
+				<logger level="INFO" doc:name="Logger" doc:id="b763e3e0-590b-4a60-8704-e3670798ca69" message='#["Order is updated"]'/>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="4fa8bbef-f285-4a34-8431-455a29a3c5c5" message='#["Order already exists in Salesforce"]'/>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="gea-orders-ebs-sfdc-integrationFlow" doc:id="4e9b3893-1240-477d-9ed0-39d135420eab" initialState="stopped">
+		<oracle-ebs122:business-events-source doc:name="Business events source - Checked Status to Booked" doc:id="2ff40dc7-1d54-48f7-a693-74552d06f9e3" config-ref="Oracle_EBS_12_2_JMS" subscriptionName="oracle.apps.ont.oip.statuschange.update" />
+		<logger level="INFO" doc:name="Logger" doc:id="5793f70a-f833-4e9e-aa9f-6664c4a849de" message="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]"/>
+	</flow>
+</mule>

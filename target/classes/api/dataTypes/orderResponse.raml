@@ -1,0 +1,18 @@
+#%RAML 1.0 DataType
+type: object
+
+properties:
+  ReturnStatus: string
+  EBS_Header_ID: integer
+  Order_Number: integer
+  Messages: 
+    type: array
+    items:
+      properties:
+        messageText: string
+  PO_Number: integer
+  Invoice_To: !include invoiceTo.raml
+  Ship_To: !include shipTo.raml
+  Items:
+    type: array
+    items: !include items.raml
